@@ -1,7 +1,9 @@
+// const API_BASE_URL = "http://localhost:8000";//dev
+const API_BASE_URL = "https://serverproject-4m9x.onrender.com";//prod
+
 export async function fetchRestaurants() {
   try {
-    // Make sure the URL matches your Node.js server's address and port
-    const response = await fetch("http://localhost:8000/api/restaurants");
+    const response = await fetch(`${API_BASE_URL}/api/restaurants`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -24,7 +26,7 @@ export async function fetchRestaurants() {
  */
 export async function updateRestaurant(restaurantId, updatedData) {
   try {
-    const response = await fetch(`http://localhost:8000/api/restaurants/${restaurantId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +55,7 @@ export async function updateRestaurant(restaurantId, updatedData) {
  */
 export async function createRestaurant(restaurantData) {
   try {
-    const response = await fetch("http://localhost:8000/api/restaurants", {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,7 +84,7 @@ export async function createRestaurant(restaurantData) {
  */
 export async function deleteRestaurant(restaurantId) {
   try {
-    const response = await fetch(`http://localhost:8000/api/restaurants/${restaurantId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}`, {
       method: "DELETE",
     });
 
