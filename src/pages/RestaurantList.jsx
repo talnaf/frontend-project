@@ -8,11 +8,13 @@ import {
   Card,
   CardContent,
   CardActions,
+  CardMedia,
   CircularProgress,
   Grid,
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { fetchRestaurants, deleteRestaurant } from "../api/api";
+import placeholderImg from "../assets/404_bg.png"
 import "./RestaurantList.scss";
 
 function RestaurantList() {
@@ -76,6 +78,17 @@ function RestaurantList() {
         {restaurants?.map((restaurant) => (
           <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={restaurant._id}>
             <Card elevation={3} className="restaurant-card">
+              <CardMedia
+                component="img"
+                height="200"
+                image={restaurant.picture || placeholderImg}
+                alt={restaurant.name}
+                sx={{ objectFit: "cover" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = placeholderImg;
+                }}
+              />
               <CardContent className="restaurant-card-content">
                 <Typography variant="h5" component="h2" gutterBottom>
                   {restaurant.name}

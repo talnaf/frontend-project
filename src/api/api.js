@@ -1,5 +1,5 @@
-// const API_BASE_URL = "http://localhost:8000";//dev
-const API_BASE_URL = "https://serverproject-4m9x.onrender.com";//prod
+const API_BASE_URL = "http://localhost:8000";//dev
+// const API_BASE_URL = "https://serverproject-4m9x.onrender.com";//prod
 
 export async function fetchRestaurants() {
   try {
@@ -11,7 +11,15 @@ export async function fetchRestaurants() {
 
     const data = await response.json();
     console.log("got data:", data);
-    return data;
+
+    // Process restaurant data to set picture URL using the picture endpoint
+    const processedData = data.map(restaurant => {
+      // Construct the picture URL using the server's picture endpoint
+      restaurant.picture = `${API_BASE_URL}/api/restaurants/${restaurant._id}/picture`;
+      return restaurant;
+    });
+
+    return processedData;
   } catch (error) {
     console.error("Error fetching data:", error);
     return null;
@@ -98,6 +106,30 @@ export async function deleteRestaurant(restaurantId) {
     return data;
   } catch (error) {
     console.error("Error deleting restaurant:", error);
+    throw error;
+  }
+}
+
+export async function uploadRestaurantPicture(restaurantId, imageFile) {
+  try {
+    const formData = new FormData();
+    formData.append("picture", imageFile);
+
+    const response = await fetch(`http://localhost:8000/api/restaurants/${restaurantId}/picture`, {
+      method: "POST",
+      body: formData, // Don't set Content-Type header - browser sets it automatically with boundary
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Upload result:", data);
+    return data;
+  } catch (error) {
+    console.error("Error uploading picture:", error);
     throw error;
   }
 }
