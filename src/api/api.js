@@ -1,9 +1,9 @@
-const API_BASE_URL = "http://localhost:8000";//dev
+const API_BASE_URL = "http://localhost:8000"; //dev
 // const API_BASE_URL = "https://serverproject-4m9x.onrender.com";//prod
 
-export async function fetchRestaurants() {
+export async function fetchRestaurants(page = 1, limit = 3) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/restaurants`);
+    const response = await fetch(`${API_BASE_URL}/api/restaurants?page=${page}&limit=${limit}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -11,15 +11,24 @@ export async function fetchRestaurants() {
 
     const data = await response.json();
     console.log("got data:", data);
+    if (data && data.restaurants) {
+      // Process restaurant data to set picture URL using the picture endpoint
+      const processedData = data.restaurants.map((restaurant) => {
+        // Construct the picture URL using the server's picture endpoint
+        restaurant.picture = `${API_BASE_URL}/api/restaurants/${restaurant._id}/picture`;
+        return restaurant;
+      });
 
-    // Process restaurant data to set picture URL using the picture endpoint
-    const processedData = data.map(restaurant => {
-      // Construct the picture URL using the server's picture endpoint
-      restaurant.picture = `${API_BASE_URL}/api/restaurants/${restaurant._id}/picture`;
-      return restaurant;
-    });
-
-    return processedData;
+      return {
+        restaurants: processedData,
+        pagination: data.pagination,
+        // totalPages: data.totalPages,
+        // currentPage: data.currentPage,
+        // totalRestaurants: data.totalRestaurants,
+      };
+    } else {
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching data:", error);
     return null;
@@ -130,6 +139,50 @@ export async function uploadRestaurantPicture(restaurantId, imageFile) {
     return data;
   } catch (error) {
     console.error("Error uploading picture:", error);
+    throw error;
+  }
+}
+
+/**
+ * Searches restaurants by a specific field
+ * @param {string} field - The field to search by (name, cuisine, borough, etc.)
+ * @param {string} query - The search query
+ * @param {number} page - Page number for pagination
+ * @param {number} limit - Number of results per page
+ * @returns {Promise<Object>} Search results with pagination data
+ */
+export async function searchRestaurants(field, query, page = 1, limit = 3) {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/restaurants/search?field=${encodeURIComponent(
+        field,
+      )}&query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Search result:", data);
+
+    if (data && data.restaurants) {
+      // Process restaurant data to set picture URL using the picture endpoint
+      const processedData = data.restaurants.map((restaurant) => {
+        restaurant.picture = `${API_BASE_URL}/api/restaurants/${restaurant._id}/picture`;
+        return restaurant;
+      });
+
+      return {
+        restaurants: processedData,
+        pagination: data.pagination,
+      };
+    } else {
+      return { restaurants: [], pagination: { totalPages: 0 } };
+    }
+  } catch (error) {
+    console.error("Error searching restaurants:", error);
     throw error;
   }
 }
