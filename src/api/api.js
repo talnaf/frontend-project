@@ -186,3 +186,88 @@ export async function searchRestaurants(field, query, page = 1, limit = 3) {
     throw error;
   }
 }
+
+/**
+ * Creates a new user in MongoDB
+ * @param {Object} userData - The user data to create
+ * @param {string} userData.uid - Firebase user ID
+ * @param {string} userData.email - User email
+ * @param {string} userData.name - User name
+ * @param {string} userData.role - User role ("user" or "manager")
+ * @returns {Promise<Object>} The created user data
+ */
+export async function createUser(userData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("User created:", data);
+    return data;
+  } catch (error) {
+    console.error("Error creating user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves a user by Firebase UID
+ * @param {string} uid - The Firebase UID of the user
+ * @returns {Promise<Object>} The user data
+ */
+export async function getUserByUid(uid) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/uid/${uid}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the email verification status for a user
+ * @param {string} uid - The Firebase UID of the user
+ * @param {boolean} isEmailVerified - The email verification status
+ * @returns {Promise<Object>} The response data
+ */
+export async function updateUserEmailVerification(uid, isEmailVerified) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/uid/${uid}/verify-email`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ isEmailVerified }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Email verification updated:", data);
+    return data;
+  } catch (error) {
+    console.error("Error updating email verification:", error);
+    throw error;
+  }
+}

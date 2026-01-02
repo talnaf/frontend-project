@@ -2,15 +2,20 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import RestaurantList from "./pages/RestaurantList";
 import AddRestaurant from "./pages/AddRestaurant";
 import EditRestaurant from "./pages/EditRestaurant";
+import Signup from "./pages/Signup";
+import Navbar from "./components/Navbar";
+import { RoutesEnum } from "./utils";
 import "./App.scss";
 
 function App() {
   return (
     <Router>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<RestaurantList />} />
-        <Route path="/add" element={<AddRestaurant />} />
-        <Route path="/edit/:id" element={<EditRestaurant />} />
+        <Route path={RoutesEnum.Home} element={<RestaurantList />} />
+        <Route path={RoutesEnum.ADD} element={<AddRestaurant />} />
+        <Route path={RoutesEnum.EDIT} element={<EditRestaurant />} />
+        <Route path={RoutesEnum.SIGNUP} element={<Signup />} />
       </Routes>
     </Router>
   );

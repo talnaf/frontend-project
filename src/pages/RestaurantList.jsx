@@ -171,7 +171,7 @@ function RestaurantList() {
 
       <Grid container spacing={3}>
         {restaurants?.map((restaurant) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={restaurant._id}>
+          <Grid xs={12} sm={6} md={4} lg={3} xl={2} key={restaurant._id}>
             <Card elevation={3} className="restaurant-card">
               <CardMedia
                 component="img"
