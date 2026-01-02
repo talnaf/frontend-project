@@ -7,7 +7,7 @@ import {
 import { auth } from "../../firebase";
 import { RoutesEnum } from "../../../utils";
 import { FirebaseError } from "firebase/app";
-import { generateFirebaseAuthErrorMessage } from "../ErrorHandler";
+import { generateFirebaseAuthErrorMessage } from "../errorHandler/index";
 
 export const forgotPassword = async (
   email,

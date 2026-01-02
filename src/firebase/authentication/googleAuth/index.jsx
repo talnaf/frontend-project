@@ -2,7 +2,7 @@ import { FirebaseError } from "firebase/app";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleAuthProvider } from "../../firebase";
 import { RoutesEnum } from "../../../utils";
-import { generateFirebaseAuthErrorMessage } from "../ErrorHandler";
+import { generateFirebaseAuthErrorMessage } from "../errorHandler/index";
 import { createUser, getUserByUid } from "../../../api/api";
 
 export const signInUserWithGoogle = async (navigate) => {
