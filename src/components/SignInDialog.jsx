@@ -77,25 +77,30 @@ function SignInDialog({ open, onClose }) {
 
     setLoading(true);
     try {
-      loginUserWithEmailAndPassword(formData.email, formData.password, navigate);
+      await loginUserWithEmailAndPassword(formData.email, formData.password, navigate);
 
       console.log("Sign in data:", {
         email: formData.email,
       });
 
-      // On success, close dialog and reset form
+      // On success, reset form and close dialog
       setFormData({ email: "", password: "" });
+      setLoading(false);
+
+      // Give Firebase auth state time to propagate to Navbar
+      await new Promise(resolve => setTimeout(resolve, 500));
       onClose();
+      // Stay on current page (home), navbar will update via onAuthStateChanged
     } catch (error) {
       console.error("Sign in error:", error);
       setError("Failed to sign in. Please check your credentials.");
-    } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
     if (!loading) {
+      console.log("handleClose1")
       setFormData({ email: "", password: "" });
       setResetEmail("");
       setError("");
@@ -105,6 +110,8 @@ function SignInDialog({ open, onClose }) {
       setPendingGoogleUser(null);
       setSelectedRole("user");
       onClose();
+    }else{      
+      console.log("handleClose2")
     }
   };
 

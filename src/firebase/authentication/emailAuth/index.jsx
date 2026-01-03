@@ -12,22 +12,11 @@ import { FirebaseError } from "firebase/app";
 import { generateFirebaseAuthErrorMessage } from "../errorHandler/index";
 import { createUser, updateUserEmailVerification } from "../../../api/api";
 
-export const registerUser = async (
-  name,
-  email,
-  password,
-  role,
-  setLoading,
-  navigate
-) => {
+export const registerUser = async (name, email, password, role, setLoading, navigate) => {
   try {
     setLoading(true);
     // create a new user in Firebase
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const results = userCredential.user;
     console.log(results);
 
@@ -38,7 +27,7 @@ export const registerUser = async (
         email: email,
         name: name,
         role: role,
-        isEmailVerified: false
+        isEmailVerified: false,
       });
       console.log("User data saved to MongoDB");
     } catch (dbError) {
@@ -48,8 +37,14 @@ export const registerUser = async (
 
     // Send an email verification to the users email
     await sendEmailVerification(results);
+
+    // Sign out the user immediately after signup
+    // They must verify their email before signing in
+    await auth.signOut();
+    console.log("User signed out after signup");
+
     alert(
-      `A verification email has been sent to your email address ${name}!. Please verify your email to login.`
+      `A verification email has been sent to your email address ${name}!. Please verify your email to login.`,
     );
   } catch (error) {
     if (error instanceof FirebaseError) {
@@ -62,23 +57,25 @@ export const registerUser = async (
   }
 };
 
-export const loginUserWithEmailAndPassword = async (
-  email,
-  password,
-  navigate
-) => {
+export const loginUserWithEmailAndPassword = async (email, password, navigate) => {
   try {
-    console.log(email, password);
+    console.log("loginUserWithEmailAndPassword:", email, password);
     // Login user
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("userCredential:", userCredential);
     const results = userCredential.user;
+    console.log("results:", results);
+
+    // Reload user data to get the latest email verification status
+    // This is important when email was verified in another tab/session
+    await results.reload();
+    console.log("User data reloaded, emailVerified:", results.emailVerified);
+
     if (results.emailVerified === false) {
+      // Sign out the user since email is not verified
+      await auth.signOut();
       alert("Please verify your email to login.");
-      return;
+      throw new Error("Email not verified");
     }
 
     // Sync email verification status with MongoDB
@@ -89,22 +86,18 @@ export const loginUserWithEmailAndPassword = async (
       console.error("Failed to sync email verification with MongoDB:", dbError);
       // Continue with login even if sync fails
     }
-
-    navigate(RoutesEnum.Home);
+    console.log("success loginUserWithEmailAndPassword");
   } catch (error) {
     if (error instanceof FirebaseError) {
       generateFirebaseAuthErrorMessage(error);
     }
-    console.error(error);
+    console.error("loginUserWithEmailAndPassword error:", error);
+    throw error; // Re-throw to let SignInDialog handle it
   }
+  console.log("end of loginUserWithEmailAndPassword");
 };
 
-export const updateUserEmail = async (
-  email,
-  newEmail,
-  password,
-  setIsLoading
-) => {
+export const updateUserEmail = async (email, newEmail, password, setIsLoading) => {
   try {
     if (auth.currentUser === null) return;
     setIsLoading(true);
@@ -119,7 +112,7 @@ export const updateUserEmail = async (
     // Send email verification to the new email
     await sendEmailVerification(auth.currentUser);
     alert(
-      `A verification email has been sent to your new email address ${newEmail}!. Please verify your email to login.`
+      `A verification email has been sent to your new email address ${newEmail}!. Please verify your email to login.`,
     );
   } catch (error) {
     if (error instanceof FirebaseError) {

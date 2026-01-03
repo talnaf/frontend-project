@@ -17,17 +17,23 @@ function Navbar() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("onAuthStateChanged - firebaseUser:", firebaseUser?.email || "null");
       if (firebaseUser) {
+        console.log("Setting user state...");
         setUser(firebaseUser);
 
         // Fetch user data from MongoDB to get name and role
         try {
+          console.log("Fetching MongoDB user data for uid:", firebaseUser.uid);
           const mongoUser = await getUserByUid(firebaseUser.uid);
+          console.log("MongoDB user data fetched:", mongoUser);
           setUserData(mongoUser);
+          console.log("User data state updated");
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
       } else {
+        console.log("No Firebase user, clearing state");
         setUser(null);
         setUserData(null);
       }
@@ -78,18 +84,13 @@ function Navbar() {
               }}
             />
           ) : (
-            <Button
-              color="inherit"
-              onClick={() => setSignInDialogOpen(true)}>
+            <Button color="inherit" onClick={() => setSignInDialogOpen(true)}>
               Sign In
             </Button>
           )}
         </Box>
       </Toolbar>
-      <SignInDialog
-        open={signInDialogOpen}
-        onClose={() => setSignInDialogOpen(false)}
-      />
+      <SignInDialog open={signInDialogOpen} onClose={() => setSignInDialogOpen(false)} />
     </AppBar>
   );
 }

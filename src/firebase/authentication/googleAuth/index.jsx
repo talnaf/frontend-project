@@ -21,8 +21,8 @@ export const signInUserWithGoogle = async (navigate, onUserNotFound) => {
       console.log("User already exists in MongoDB");
 
       // User exists, proceed to account page
-      navigate(RoutesEnum.Account);
-      alert(`Welcome ${user.displayName}!`);
+      // navigate(RoutesEnum.Account);
+      alert(`Welcome ${user.displayName}! - ${user.role}`);
     } catch (error) {
       // User doesn't exist - sign them out first
       await auth.signOut();
@@ -60,7 +60,7 @@ export const completeGoogleSignUp = async (userData, role, navigate) => {
       email: userData.email,
       name: userData.displayName || userData.email,
       role: role,
-      isEmailVerified: true
+      isEmailVerified: true,
     });
     console.log("✓ User data saved to MongoDB");
 
@@ -73,8 +73,8 @@ export const completeGoogleSignUp = async (userData, role, navigate) => {
       console.warn("No credential found, cannot re-authenticate");
     }
 
-    navigate(RoutesEnum.Account);
-    alert(`Welcome ${userData.displayName}!`);
+    // navigate(RoutesEnum.Account);
+    alert(`Welcome ${user.displayName}! - ${user.role}`);
   } catch (error) {
     console.error("Failed to complete Google sign-up:", error);
     // Sign out the user since we couldn't create their account
