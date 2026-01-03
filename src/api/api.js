@@ -228,10 +228,11 @@ export async function createUser(userData) {
 export async function getUserByUid(uid) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/uid/${uid}`);
-
+    console.log("response:", response);
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      console.log("errorData:", errorData);
+      // throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();

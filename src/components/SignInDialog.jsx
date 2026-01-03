@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,11 +13,16 @@ import {
   Typography,
   Link,
   Divider,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 import { Close as CloseIcon, Google as GoogleIcon } from "@mui/icons-material";
 import { loginUserWithEmailAndPassword } from "../firebase/authentication/emailAuth";
 import { useNavigate } from "react-router-dom";
-import { signInUserWithGoogle } from "../firebase/authentication/googleAuth";
+import { signInUserWithGoogle, completeGoogleSignUp } from "../firebase/authentication/googleAuth";
 import { forgotPassword } from "../firebase/authentication/passwordAuth";
 
 function SignInDialog({ open, onClose }) {
@@ -30,7 +35,25 @@ function SignInDialog({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const [selectedRole, setSelectedRole] = useState("user");
   const navigate = useNavigate();
+
+  // Reset all states when dialog opens
+  useEffect(() => {
+    if (open) {
+      setFormData({ email: "", password: "" });
+      setResetEmail("");
+      setError("");
+      setShowForgotPassword(false);
+      setResetSuccess(false);
+      setShowRoleSelection(false);
+      setPendingGoogleUser(null);
+      setSelectedRole("user");
+      setLoading(false);
+    }
+  }, [open]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -78,6 +101,9 @@ function SignInDialog({ open, onClose }) {
       setError("");
       setShowForgotPassword(false);
       setResetSuccess(false);
+      setShowRoleSelection(false);
+      setPendingGoogleUser(null);
+      setSelectedRole("user");
       onClose();
     }
   };
@@ -97,6 +123,9 @@ function SignInDialog({ open, onClose }) {
     setResetEmail("");
     setResetSuccess(false);
     setShowForgotPassword(false);
+    setShowRoleSelection(false);
+    setPendingGoogleUser(null);
+    setSelectedRole("user");
   };
 
   const handlePasswordReset = async (e) => {
@@ -135,14 +164,40 @@ function SignInDialog({ open, onClose }) {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setError("");
+    let userFound = true;
     try {
-      // TODO: Implement Google sign-in
-      console.log("Google sign-in clicked");
-      signInUserWithGoogle(navigate);
+      await signInUserWithGoogle(navigate, (userData) => {
+        console.log("signInUserWithGoogle - userData:",userData)
+        // User doesn't exist, show role selection
+        userFound = false;
+        setPendingGoogleUser(userData);
+        setShowRoleSelection(true);
+        setLoading(false);
+      });
+      // Only close the dialog if user was found (existing user signed in)
+      if (userFound) {
+        handleClose();
+      }
     } catch (error) {
       console.error("Google sign-in error:", error);
       setError("Failed to sign in with Google. Please try again.");
-    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteGoogleSignUp = async () => {
+    if (!pendingGoogleUser) return;
+
+    setLoading(true);
+    setError("");
+    try {
+      await completeGoogleSignUp(pendingGoogleUser, selectedRole, navigate);
+      // Successfully created account, close dialog
+      handleClose();
+    } catch (error) {
+      console.error("Failed to complete Google sign-up:", error);
+      setError("Failed to create your account. Please try again.");
       setLoading(false);
     }
   };
@@ -151,7 +206,7 @@ function SignInDialog({ open, onClose }) {
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          {showForgotPassword ? "Reset Password" : "Sign In"}
+          {showRoleSelection ? "Select Account Type" : showForgotPassword ? "Reset Password" : "Sign In"}
           <IconButton onClick={handleClose} disabled={loading} size="small">
             <CloseIcon />
           </IconButton>
@@ -172,7 +227,30 @@ function SignInDialog({ open, onClose }) {
               Password reset email sent! Please check your inbox.
             </Alert>
           )}
-          {showForgotPassword ? (
+          {showRoleSelection ? (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Welcome! Please select your account type to complete the sign-up process.
+              </Typography>
+              <FormControl component="fieldset" fullWidth disabled={loading}>
+                <FormLabel component="legend">Account Type</FormLabel>
+                <RadioGroup
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}>
+                  <FormControlLabel
+                    value="user"
+                    control={<Radio />}
+                    label="User - Browse and review restaurants"
+                  />
+                  <FormControlLabel
+                    value="restaurantOwner"
+                    control={<Radio />}
+                    label="Restaurant Owner - Manage restaurant listings"
+                  />
+                </RadioGroup>
+              </FormControl>
+            </>
+          ) : showForgotPassword ? (
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Enter your email address and we'll send you a link to reset your password.
@@ -257,7 +335,23 @@ function SignInDialog({ open, onClose }) {
           )}
         </DialogContent>
         <DialogActions sx={{ flexDirection: "column", gap: 1, px: 3, pb: 2 }}>
-          {showForgotPassword ? (
+          {showRoleSelection ? (
+            <>
+              <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+                <Button onClick={handleBackToSignIn} disabled={loading} sx={{ flex: 1 }}>
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleCompleteGoogleSignUp}
+                  disabled={loading}
+                  sx={{ flex: 1 }}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}>
+                  {loading ? "Creating Account..." : "Continue"}
+                </Button>
+              </Box>
+            </>
+          ) : showForgotPassword ? (
             <>
               <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
                 <Button onClick={handleBackToSignIn} disabled={loading} sx={{ flex: 1 }}>

@@ -3,6 +3,8 @@ import RestaurantList from "./pages/RestaurantList";
 import AddRestaurant from "./pages/AddRestaurant";
 import EditRestaurant from "./pages/EditRestaurant";
 import Signup from "./pages/Signup";
+import UserPage from "./pages/UserPage";
+import RestaurantOwnerPage from "./pages/RestaurantOwnerPage";
 import Navbar from "./components/Navbar";
 import { RoutesEnum } from "./utils";
 import "./App.scss";
@@ -16,6 +18,8 @@ function App() {
         <Route path={RoutesEnum.ADD} element={<AddRestaurant />} />
         <Route path={RoutesEnum.EDIT} element={<EditRestaurant />} />
         <Route path={RoutesEnum.SIGNUP} element={<Signup />} />
+        <Route path={RoutesEnum.USER_PAGE} element={<UserPage />} />
+        <Route path={RoutesEnum.RESTAURANT_OWNER_PAGE} element={<RestaurantOwnerPage />} />
       </Routes>
     </Router>
   );

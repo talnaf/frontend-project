@@ -159,9 +159,9 @@ function Signup() {
                 label="User - Browse and review restaurants"
               />
               <FormControlLabel
-                value="manager"
+                value="restaurantOwner"
                 control={<Radio />}
-                label="Restaurant Manager - Manage restaurant listings"
+                label="Restaurant Owner - Manage restaurant listings"
               />
             </RadioGroup>
           </FormControl>

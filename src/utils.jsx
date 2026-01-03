@@ -3,5 +3,6 @@ export const RoutesEnum = Object.freeze({
   SIGNUP: "/signup",
   ADD: "/add",
   EDIT: "/edit/:id",
-  Account: "/account",
+  USER_PAGE: "/user",
+  RESTAURANT_OWNER_PAGE: "/restaurant-owner",
 });
