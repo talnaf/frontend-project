@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
@@ -7,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardActions,
   CardMedia,
   CircularProgress,
   Grid,
@@ -20,12 +18,9 @@ import {
   InputLabel,
 } from "@mui/material";
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
-import { fetchRestaurants, deleteRestaurant, searchRestaurants } from "../api/api";
+import { fetchRestaurants, searchRestaurants } from "../api/api";
 import placeholderImg from "../assets/404_bg.png";
 import "./RestaurantList.scss";
 
@@ -38,7 +33,6 @@ function RestaurantList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageLimit = 3;
-  const navigate = useNavigate();
 
   useEffect(() => {
     const loadRestaurants = async () => {
@@ -78,19 +72,6 @@ function RestaurantList() {
     setPage(1);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this restaurant?")) {
-      try {
-        await deleteRestaurant(id);
-        setRestaurants(restaurants.filter((restaurant) => restaurant._id !== id));
-      } catch (error) {
-        console.error("Failed to delete restaurant:", error);
-        alert("Failed to delete restaurant. Please try again.");
-      }
-    }
-  };
-
-
   if (loading) {
     return (
       <Box className="loading-container">
@@ -105,14 +86,6 @@ function RestaurantList() {
         <Typography variant="h3" component="h1">
           Restaurants
         </Typography>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<AddIcon />}
-          onClick={() => navigate("/add")}
-          size="large">
-          Add New Restaurant
-        </Button>
       </Box>
 
       {/* Search Bar */}
@@ -205,26 +178,6 @@ function RestaurantList() {
                   </Typography>
                 )}
               </CardContent>
-              <CardActions className="restaurant-card-actions">
-                <Box className="button-group">
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<EditIcon />}
-                    onClick={() => navigate(`/edit/${restaurant._id}`)}
-                    size="small">
-                    Edit
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDelete(restaurant._id)}
-                    size="small">
-                    Delete
-                  </Button>
-                </Box>
-              </CardActions>
             </Card>
           </Grid>
         ))}

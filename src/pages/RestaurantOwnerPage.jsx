@@ -23,16 +23,18 @@ import {
   Restaurant as RestaurantIcon,
   Add as AddIcon,
   Dashboard as DashboardIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
-import { getUserByUid } from "../api/api";
+import { getUserByUid, getRestaurantByOwnerId } from "../api/api";
 import { RoutesEnum } from "../utils";
 
 function RestaurantOwnerPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +50,16 @@ function RestaurantOwnerPage() {
           if (mongoUser.role !== "restaurantOwner") {
             navigate(RoutesEnum.USER_PAGE);
             return;
+          }
+
+          // Fetch owner's restaurant
+          try {
+            const ownerRestaurant = await getRestaurantByOwnerId(firebaseUser.uid);
+            setRestaurant(ownerRestaurant);
+          } catch (error) {
+            console.error("Error fetching restaurant:", error);
+            // Owner may not have a restaurant yet, which is fine
+            setRestaurant(null);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -132,51 +144,83 @@ function RestaurantOwnerPage() {
       </Paper>
 
       <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-        Owner Actions
+        {restaurant ? "My Restaurant" : "Get Started"}
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              height: "100%",
-              cursor: "pointer",
-              "&:hover": { boxShadow: 6 },
-              transition: "box-shadow 0.3s",
-            }}
-            onClick={() => navigate(RoutesEnum.ADD)}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <AddIcon sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
-                <Typography variant="h6">Add New Restaurant</Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Create a new restaurant listing with details, images, and location information.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              height: "100%",
-              cursor: "pointer",
-              "&:hover": { boxShadow: 6 },
-              transition: "box-shadow 0.3s",
-            }}
-            onClick={() => navigate(RoutesEnum.Home)}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <RestaurantIcon sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
-                <Typography variant="h6">Manage Restaurants</Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                View, edit, and manage all restaurant listings in the system.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {restaurant ? (
+          <>
+            <Grid xs={12}  style={{minWidth:"100%"}}>
+              <Card style={{minWidth:"100%"}}>
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    {restaurant.picture ? (
+                      <Box
+                        component="img"
+                        src={restaurant.picture}
+                        alt={restaurant.name}
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          objectFit: "cover",
+                          borderRadius: 2,
+                          mr: 2,
+                        }}
+                      />
+                    ) : (
+                      <RestaurantIcon sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
+                    )}
+                    <Box>
+                      <Typography variant="h6">{restaurant.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {restaurant.cuisine} • {restaurant.borough}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Address: {restaurant.address?.building} {restaurant.address?.street}, {restaurant.address?.zipcode}
+                  </Typography>
+                  <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<EditIcon />}
+                      onClick={() => navigate(`/edit/${restaurant._id}`)}>
+                      Edit Restaurant
+                    </Button>
+                    {/* <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate(RoutesEnum.Home)}>
+                      View All Restaurants
+                    </Button> */}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </>
+        ) : (
+          <Grid item xs={12}>
+            <Card
+              sx={{
+                cursor: "pointer",
+                "&:hover": { boxShadow: 6 },
+                transition: "box-shadow 0.3s",
+              }}
+              onClick={() => navigate(RoutesEnum.ADD)}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <AddIcon sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
+                  <Typography variant="h6">Add Your Restaurant</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  You don't have a restaurant yet. Click here to create your restaurant listing with details, images, and location information.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>

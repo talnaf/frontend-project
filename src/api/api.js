@@ -38,7 +38,7 @@ export async function fetchRestaurants(page = 1, limit = 3) {
 /**
  * Updates a restaurant by ID
  * @param {string} restaurantId - The MongoDB ObjectId of the restaurant
- * @param {Object} updatedData - The fields to update (e.g., { name: "New Name", cuisine: "Italian" })
+ * @param {Object} updatedData - The fields to update (must include ownerId for authorization)
  * @returns {Promise<Object>} The response data with update result
  */
 export async function updateRestaurant(restaurantId, updatedData) {
@@ -53,7 +53,7 @@ export async function updateRestaurant(restaurantId, updatedData) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -67,7 +67,7 @@ export async function updateRestaurant(restaurantId, updatedData) {
 
 /**
  * Creates a new restaurant
- * @param {Object} restaurantData - The restaurant data to create
+ * @param {Object} restaurantData - The restaurant data to create (including ownerId)
  * @returns {Promise<Object>} The created restaurant data
  */
 export async function createRestaurant(restaurantData) {
@@ -82,7 +82,7 @@ export async function createRestaurant(restaurantData) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -97,17 +97,18 @@ export async function createRestaurant(restaurantData) {
 /**
  * Deletes a restaurant by ID
  * @param {string} restaurantId - The MongoDB ObjectId of the restaurant to delete
+ * @param {string} ownerId - The Firebase UID of the restaurant owner (required for authorization)
  * @returns {Promise<Object>} The response data with deletion result
  */
-export async function deleteRestaurant(restaurantId) {
+export async function deleteRestaurant(restaurantId, ownerId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}?ownerId=${encodeURIComponent(ownerId)}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -115,6 +116,39 @@ export async function deleteRestaurant(restaurantId) {
     return data;
   } catch (error) {
     console.error("Error deleting restaurant:", error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves a restaurant by owner UID
+ * @param {string} ownerId - The Firebase UID of the restaurant owner
+ * @returns {Promise<Object|null>} The restaurant data or null if not found
+ */
+export async function getRestaurantByOwnerId(ownerId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/owner/${ownerId}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        // Owner has no restaurant yet
+        return null;
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Restaurant by owner:", data);
+
+    // Process picture URL
+    if (data.restaurant) {
+      data.restaurant.picture = `${API_BASE_URL}/api/restaurants/${data.restaurant._id}/picture`;
+    }
+
+    return data.restaurant;
+  } catch (error) {
+    console.error("Error fetching restaurant by owner:", error);
     throw error;
   }
 }

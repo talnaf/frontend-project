@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Container, Box, Typography, TextField, Button, Paper, CircularProgress } from "@mui/material";
+import { Container, Box, Typography, TextField, Button, Paper, CircularProgress, Alert } from "@mui/material";
 import { Save as SaveIcon, Cancel as CancelIcon, Upload as UploadIcon } from "@mui/icons-material";
-import { fetchRestaurants, updateRestaurant, uploadRestaurantPicture } from "../api/api";
+import { getRestaurantByOwnerId, updateRestaurant, uploadRestaurantPicture } from "../api/api";
+import { auth } from "../firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 function EditRestaurant() {
   const [formData, setFormData] = useState({
@@ -17,39 +19,66 @@ function EditRestaurant() {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
 
   useEffect(() => {
-    const loadRestaurant = async () => {
-      try {
-        const data = await fetchRestaurants();
-        const restaurant = data.find((r) => r._id === id);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        navigate("/");
+      }
+    });
 
-        if (restaurant) {
-          setFormData({
-            name: restaurant.name,
-            cuisine: restaurant.cuisine,
-            borough: restaurant.borough,
-            building: restaurant.address.building,
-            street: restaurant.address.street,
-            zipcode: restaurant.address.zipcode,
-          });
-        } else {
-          alert("Restaurant not found");
-          navigate("/");
+    return () => unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    const loadRestaurant = async () => {
+      if (!user) {
+        // Wait for user authentication to complete
+        return;
+      }
+
+      try {
+        const restaurant = await getRestaurantByOwnerId(user.uid);
+        console.log("restaurant:", restaurant);
+
+        if (!restaurant) {
+          setError("You don't have a restaurant yet");
+          navigate("/restaurant-owner");
+          return;
         }
+
+        // Verify that the restaurant ID matches the URL parameter
+        if (restaurant._id !== id) {
+          setError("You can only edit your own restaurant");
+          navigate("/restaurant-owner");
+          return;
+        }
+
+        setFormData({
+          name: restaurant.name,
+          cuisine: restaurant.cuisine,
+          borough: restaurant.borough,
+          building: restaurant.address.building,
+          street: restaurant.address.street,
+          zipcode: restaurant.address.zipcode,
+        });
       } catch (error) {
         console.error("Error loading restaurant:", error);
-        alert("Failed to load restaurant");
-        navigate("/");
+        setError(error.message || "Failed to load restaurant");
+        navigate("/restaurant-owner");
       } finally {
         setLoading(false);
       }
     };
 
     loadRestaurant();
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -99,6 +128,11 @@ function EditRestaurant() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+      setError("You must be signed in to edit a restaurant");
+      return;
+    }
+
     try {
       const updatedData = {
         name: formData.name,
@@ -109,6 +143,7 @@ function EditRestaurant() {
           street: formData.street,
           zipcode: formData.zipcode,
         },
+        ownerId: user.uid, // Include ownerId for authorization
       };
 
       await updateRestaurant(id, updatedData);
@@ -118,10 +153,10 @@ function EditRestaurant() {
         await uploadRestaurantPicture(id, selectedImage);
       }
 
-      navigate("/");
+      navigate("/restaurant-owner");
     } catch (error) {
       console.error("Failed to update restaurant:", error);
-      alert("Failed to update restaurant. Please try again.");
+      setError(error.message || "Failed to update restaurant. Please try again.");
     }
   };
 
@@ -139,6 +174,11 @@ function EditRestaurant() {
         <Typography variant="h4" component="h1" gutterBottom>
           Edit Restaurant
         </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
           <TextField
             fullWidth

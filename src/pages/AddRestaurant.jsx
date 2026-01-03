@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Box, Typography, TextField, Button, Paper } from "@mui/material";
+import { Container, Box, Typography, TextField, Button, Paper, Alert } from "@mui/material";
 import { Add as AddIcon, Cancel as CancelIcon } from "@mui/icons-material";
 import { createRestaurant } from "../api/api";
+import { auth } from "../firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 function AddRestaurant() {
   const [formData, setFormData] = useState({
@@ -13,7 +15,21 @@ function AddRestaurant() {
     street: "",
     zipcode: "",
   });
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        navigate("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -21,6 +37,11 @@ function AddRestaurant() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!user) {
+      setError("You must be signed in to create a restaurant");
+      return;
+    }
 
     try {
       const newRestaurant = {
@@ -34,13 +55,14 @@ function AddRestaurant() {
           coord: [-73.0, 40.0],
         },
         grades: [],
+        ownerId: user.uid, // Include the owner's Firebase UID
       };
 
       await createRestaurant(newRestaurant);
-      navigate("/");
+      navigate("/restaurant-owner");
     } catch (error) {
       console.error("Failed to create restaurant:", error);
-      alert("Failed to create restaurant. Please try again.");
+      setError(error.message || "Failed to create restaurant. Please try again.");
     }
   };
 
@@ -50,6 +72,11 @@ function AddRestaurant() {
         <Typography variant="h4" component="h1" gutterBottom>
           Add New Restaurant
         </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
           <TextField
             fullWidth
