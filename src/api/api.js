@@ -153,6 +153,35 @@ export async function getRestaurantByOwnerId(ownerId) {
   }
 }
 
+/**
+ * Retrieves a single restaurant by its ID
+ * @param {string} restaurantId - The MongoDB ObjectId of the restaurant
+ * @returns {Promise<Object>} The restaurant data
+ */
+export async function getRestaurantById(restaurantId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/${restaurantId}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Restaurant by ID:", data);
+
+    // Process picture URL
+    if (data.restaurant) {
+      data.restaurant.picture = `${API_BASE_URL}/api/restaurants/${data.restaurant._id}/picture`;
+    }
+
+    return data.restaurant;
+  } catch (error) {
+    console.error("Error fetching restaurant by ID:", error);
+    throw error;
+  }
+}
+
 export async function uploadRestaurantPicture(restaurantId, imageFile) {
   try {
     const formData = new FormData();

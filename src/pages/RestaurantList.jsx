@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
@@ -25,6 +26,7 @@ import placeholderImg from "../assets/404_bg.png";
 import "./RestaurantList.scss";
 
 function RestaurantList() {
+  const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,7 +147,19 @@ function RestaurantList() {
       <Grid container spacing={3}>
         {restaurants?.map((restaurant) => (
           <Grid xs={12} sm={6} md={4} lg={3} xl={2} key={restaurant._id}>
-            <Card elevation={3} className="restaurant-card">
+            <Card
+              elevation={3}
+              className="restaurant-card"
+              onClick={() => navigate(`/restaurant/${restaurant._id}`)}
+              sx={{
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
+                }
+              }}
+            >
               <CardMedia
                 component="img"
                 height="200"
